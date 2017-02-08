@@ -98,6 +98,7 @@ elif model_type == "1":
         for w in ws:       # For every work token in every sentence:
             if not unigram_dict.has_key(w):
                 w = "<unk>"
+            print(w)
             prob = unigram_dict[w] / vocab_size
             log_prob = math.log(prob)
             total_log_prob += log_prob

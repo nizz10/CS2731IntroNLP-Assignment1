@@ -4,6 +4,7 @@
 
 import argparse
 import math
+import pickle
 
 # The following lines parse the command line arguments for you. You may ignore this part.
 argument_parser = argparse.ArgumentParser("Log probability script. ")
@@ -30,7 +31,8 @@ print("")
 
 # Recreate the LM
 with open(model_dir + "/model_type.txt") as f:
-    model_type = f.readline()
+    model_type = f.readline().rstrip("\n")
+    smooth_or_not = f.readline()
 
 with open(model_dir + "/vocab_size.txt") as f:
     vocab_size = float(f.readline())
@@ -53,11 +55,14 @@ elif model_type == "1":
     # unsmoothed unigram
     # P(w1w1...wk) = P(w1)P(w2)...P(wk)
 
-    log_probs = [math.log(dict[ngram] / vocab_size) for ngram in queried_ngrams]
-
+    log_probs = []
     with open(log_prob_output_path, "w") as f:
         for index, ngram in enumerate(queried_ngrams):
-            log_probs[i] = math.log(dict[ngram] / vocab_size)
+            print(ngram[0])
+            if not dict.has_key(ngram[0]):
+                log_probs.append(math.log(dict["<unk>"] / vocab_size))
+            else:
+                log_probs.append(math.log(dict[ngram[0]] / vocab_size))
         f.write("\n".join([str(x) for x in log_probs]))
 
 
