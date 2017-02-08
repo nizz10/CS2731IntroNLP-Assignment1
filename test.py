@@ -55,9 +55,10 @@ with open(model_dir + "/model_type.txt") as f:
 with open(model_dir + "/vocab_size.txt") as f:
     vocab_size = float(f.readline())
 
-# Get the ngram counts
-with open(model_dir + "/ngram_counts.pkl", "rb") as f:
-    unigram_dict = pickle.load(f)
+if model_type == "1" or model_type == "3" or model_type == "s3":
+    # Get the ngram counts
+    with open(model_dir + "/ngram_counts.pkl", "rb") as f:
+        unigram_dict = pickle.load(f)
 
 
 

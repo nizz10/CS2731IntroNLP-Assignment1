@@ -1,6 +1,6 @@
 # A Dummy Implementation
 
-The dummy language model is a uniform unigram language model. IT assigns the probability of $\frac{1}{V}$ to every unigram, where $V$ is the vocabulary size. 
+The dummy language model is a uniform unigram language model. IT assigns the probability of $\frac{1}{V}$ to every unigram, where $V$ is the vocabulary size.
 
 ## Exercises
 
@@ -15,7 +15,7 @@ python train.py -t dummy -i data/wsj/train.txt -m dummy_wsj/
 Notice that a directory `dummy_wsj/` has been created. Inside, it has all the information that the other scripts will need to re-create this dummy LM. The exact information saved are:
 
 - `dummy_wsj/model_type.txt`: The type of the LM. In this case, it is `dummy`.
-- `dummy_wsj/vocab_size.txt`: The vocabulary size. 
+- `dummy_wsj/vocab_size.txt`: The vocabulary size.
 
 Of course, your LM should depend on much more information than what is needed for `dummy`.
 
@@ -48,7 +48,7 @@ if you want to examine a unigram model (which is our case. If you want to examin
 python log-prob.py -m dummy_wsj/ -i unigrams-to-check.txt -o log-probs.txt
 ```
 
-Notice that a file `log-probs.txt` containing the log probabilities is created. Open it to verify. 
+Notice that a file `log-probs.txt` containing the log probabilities is created. Open it to verify.
 
 ### Running the Genre Detection Task
 
@@ -64,7 +64,7 @@ You can use similar commands to see its perplexity on the testing set, or examin
 python run-task.py --wsjmodel dummy_wsj/ --sbmodel dummy_sb/ -i data/genre-task/mixed-sentences.txt -o answers.txt
 ```
 
-Notice that a file names `answers.txt` will be created. Open it, and you will see all `wsj`s, because that is what this dummy implementation of `run-task.py` does. 
+Notice that a file names `answers.txt` will be created. Open it, and you will see all `wsj`s, because that is what this dummy implementation of `run-task.py` does.
 
 To evaluate the performance, run
 
@@ -77,6 +77,3 @@ The screen will print
 ```
 Accuracy = 500/1000 (50.00%)
 ```
-
-
-

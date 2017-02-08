@@ -35,6 +35,11 @@ with open(model_dir + "/model_type.txt") as f:
 with open(model_dir + "/vocab_size.txt") as f:
     vocab_size = float(f.readline())
 
+if model_type == "1" or model_type == "3" or model_type == "s3":
+    # Get the ngram counts
+    with open(model_dir + "/ngram_counts.pkl", "rb") as f:
+        dict = pickle.load(f)
+
 queried_ngrams = [tuple(line.rstrip('\n').split(' ')) for line in open(ngram_input_path)]
 
 
@@ -43,6 +48,18 @@ if model_type == "dummy":
     log_probs = [-math.log(vocab_size) for ngram in queried_ngrams]
     with open(log_prob_output_path, "w") as f:
         f.write("\n".join([str(x) for x in log_probs]))
+
+elif model_type == "1":
+    # unsmoothed unigram
+    # P(w1w1...wk) = P(w1)P(w2)...P(wk)
+
+    log_probs = [math.log(dict[ngram] / vocab_size) for ngram in queried_ngrams]
+
+    with open(log_prob_output_path, "w") as f:
+        for index, ngram in enumerate(queried_ngrams):
+            log_probs[i] = math.log(dict[ngram] / vocab_size)
+        f.write("\n".join([str(x) for x in log_probs]))
+
 
 else:
     print("Not implemented!! ")

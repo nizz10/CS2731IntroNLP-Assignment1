@@ -1,15 +1,23 @@
-############# Using dictionary
+############# enumerate
 dict = {'a':1, 'b':2, 'c':3}
-print(dict['a'])
-for key in dict:
-	print(key);
-for key in dict.keys():
-	if key == 'a':
-		del dict[key]
-		dict["ok"] = 1
-print("")
-for key in dict:
-	print(key);
+list = ['a', 'b', 'c']
+for index, key in enumerate(dict.keys()):
+	print(index, key)
+for index, key in enumerate(list):
+	print(index, key)
+
+# ############# Using dictionary
+# dict = {'a':1, 'b':2, 'c':3}
+# print(dict['a'])
+# for key in dict:
+# 	print(key);
+# for key in dict.keys():
+# 	if key == 'a':
+# 		del dict[key]
+# 		dict["ok"] = 1
+# print("")
+# for key in dict:
+# 	print(key);
 
 # a = ['a1', 'a2', 'a3']
 # b = ['b1', 'b2']
