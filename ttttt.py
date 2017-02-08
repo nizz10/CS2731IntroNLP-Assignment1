@@ -37,10 +37,10 @@ def check_oov(dict):
     for key in dict.keys():
         if dict[key] == 1:
             del dict[key]
-            if not dict.has_key("unk"):
-                dict["unk"] = 1
+            if not dict.has_key("<unk>"):
+                dict["<unk>"] = 1
             else:
-                dict["unk"] += 1
+                dict["<unk>"] += 1
     return dict
 
 
