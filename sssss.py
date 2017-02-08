@@ -4,6 +4,7 @@
 
 import argparse
 import math
+import pickle
 
 # The following lines parse the command line arguments for you. You may ignore this part.
 argument_parser = argparse.ArgumentParser("Intrinsic evaluator of language model. ")
@@ -52,7 +53,7 @@ with open(model_dir + "/model_type.txt") as f:
     smooth_or_not = f.readline()
 
 with open(model_dir + "/vocab_size.txt") as f:
-    vocab_size = float(f.readline()
+    vocab_size = float(f.readline())
 
 # Get the ngram counts
 with open(model_dir + "/ngram_counts.pkl", "rb") as f:
@@ -67,38 +68,43 @@ if model_type == "dummy":
     log_prob = -math.log(vocab_size)
 
     # We compute the perplexity by first computing the cross-entropy h, then use exp(h) as entropy.
-    
+
     total_log_prob = 0.0
     num_tokens = 0
-    
+
     for ws in testing_sentences:
         for w in ws:
             total_log_prob += log_prob
             num_tokens += 1
-    
+
     h = -1.0 * total_log_prob / num_tokens
     perplexity = math.exp(h)
-        
+
     # In fact, this uniform unigram LM will have a perplexity which is exactly equals to the vocabulary size.
-    
+
     with open(output_path, "w") as f:
         f.writelines(str(perplexity))
 
-elif
-    
-    
+elif model_type == "1":
+    # unsmoothed unigram
+    # P(w1w1...wk) = P(w1)P(w2)...P(wk)
+    prob = 0.0
+    log_prob = 0.0
+    total_log_prob = 0.0
+    num_tokens = 0
+
+    for ws in testing_sentences:    # For every sentences in testing document:
+        for w in ws:       # For every work token in every sentence:
+            prob = unigram_dict[w] / vocab_size
+            log_prob = math.log(prob)
+            total_log_prob += log_prob
+            num_tokens += 1
+    h = -1.0 * total_log_prob / num_tokens
+    perplexity = math.exp(h)
+
+    with open(output_path, "w") as f:
+        f.writelines(str(perplexity))
+
+
 else:
     print("Not implemented!! ")
-
-
-
-
-
-
-
-
-
-
-
-
-

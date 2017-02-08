@@ -32,6 +32,18 @@ print("")
 
 
 # START OF YOUR IMPLEMENTATION
+# Utilities
+def check_oov(dict):
+    for key in dict.keys():
+        if dict[key] == 1:
+            del dict[key]
+            if not dict.has_key("unk"):
+                dict["unk"] = 1
+            else:
+                dict["unk"] += 1
+    return dict
+
+
 
 # Create the folder that holds the necessary files for fast re-building this LM later (i.e., a dump of the trained LM)
 # Notice: this will create whatever user specifies as model_dir.
@@ -55,19 +67,19 @@ if model_type == "dummy":
     # The dummy model is a very naive unigram model.
     # It assigns 1/V as the probability for every unigram.
     #   where V is the vocabulary size
-    
+
     words = [w for snt in training_sentences for w in snt]
     vocab = set()
     for w in words:
         vocab.add(w)
 
     vocab_size = len(vocab)
-    
+
     # When we re-create the LM later, we will need the model type and the vocabulary size.
     # We don't save the probabilities here, because we will be computing the probabilities only the fly later in other scripts.
     with open(model_dir + "/model_type.txt", "w") as f:
         f.writelines([model_type])
-        
+
     with open(model_dir + "/vocab_size.txt", "w") as f:
         f.writelines([str(vocab_size)])
 elif model_type == "1":
@@ -81,11 +93,17 @@ elif model_type == "1":
             unigram_dict[w] = 1;
         else:
             unigram_dict[w] += 1;
+    # Check and deal with OOV Words
+    unigram_dict = check_oov(unigram_dict)
     vocab_size = len(vocab)
+
+    ########### For testing
+    for w in unigram_dict:
+        print(w, unigram_dict[w])
 
     with open(model_dir + "/model_type.txt", "w") as f:
         f.writelines([model_type])
-        f.writelines("\nunsmoothed")    # for line in f: 
+        f.writelines("\nunsmoothed")    # for line in f:
                                         #     print(line.rstrip())
     with open(model_dir + "/vocab_size.txt", "w") as f:
         f.writelines([str(vocab_size)])     # The first line of the raw_count file is the counts of contexts
@@ -127,5 +145,3 @@ elif model_type == "1":
 
 else:
     print("Not implemented yet.")
-
-
