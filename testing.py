@@ -1,10 +1,27 @@
-############# enumerate
-dict = {'a':1, 'b':2, 'c':3}
-list = ['a', 'b', 'c']
-for index, key in enumerate(dict.keys()):
-	print(index, key)
-for index, key in enumerate(list):
-	print(index, key)
+# start = "<s>"
+# end = "</s>"
+str = "aaa bbb ddd .\nccc ddd eee ."
+# print(str)
+# str = start + " " + start + " " + str + " " + end
+# print(str)
+# print(len(str))
+#
+# training_sentences = [s.rstrip('\n').split(' ') for s in str]
+#
+# for snt in training_sentences:
+# 	for w in snt:
+# 		print(w)
+print(len(str))
+for index in range(1, len(str)):
+	print(index)
+
+# ############# enumerate
+# dict = {'a':1, 'b':2, 'c':3}
+# list = ['a', 'b', 'c']
+# for index, key in enumerate(dict.keys()):
+# 	print(index, key)
+# for index, key in enumerate(list):
+# 	print(index, key)
 
 # ############# Using dictionary
 # dict = {'a':1, 'b':2, 'c':3}

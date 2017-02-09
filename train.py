@@ -84,22 +84,25 @@ if model_type == "dummy":
         f.writelines([str(vocab_size)])
 elif model_type == "1":
     print("Training the unsmoothed unigram model...")
+    context_size = 0
     words = [w for snt in training_sentences for w in snt]
     vocab = set()
     unigram_dict = {}
     for w in words:
         vocab.add(w)
+        context_size += 1
         if not unigram_dict.has_key(w):
-            unigram_dict[w] = 1;
+            unigram_dict[w] = 1
         else:
-            unigram_dict[w] += 1;
+            unigram_dict[w] += 1
     # Check and deal with OOV Words
     unigram_dict = check_oov(unigram_dict)
     vocab_size = len(vocab)
-
+    print(vocab_size)
+    print(context_size)
     ########### For testing
-    for w in unigram_dict:
-        print(w, unigram_dict[w])
+    # for w in unigram_dict:
+    #     print(w, unigram_dict[w])
 
     with open(model_dir + "/model_type.txt", "w") as f:
         f.writelines([model_type])
@@ -111,22 +114,70 @@ elif model_type == "1":
     with open(model_dir + "/ngram_counts.pkl", "wb") as f:
         pickle.dump(unigram_dict, f)
 
+    with open(model_dir + "/context_size.txt", "w") as f:
+        f.writelines([str(context_size)])
     # No smooth counts for this model.
 
-# elif model_type == "3":
-#     print("This is the unsmoothed trigram model")
-#     words = [w for snt in training_sentences for w in snt]
-#     vocab = set()
-#     for w in words:
-#         vocab.add(w)
-#     vocab_size = len(vocab)
+elif model_type == "3":
+    # unsmoothed trigram
+    # P(w1w2..wk) = P(w3|w2w1)P(w4|w3w2)....P(wk|wk-1wk-2)
+    print("This is the unsmoothed trigram model")
+    vocab = set()
+    context_size = 0
+    trigram_dict = {}
+    bigram_dict = {}
 
-#     with open(model_dir + "/model_property.txt", "w") as f:
-#         f.writelines([model_type])
-#         f.writelines("unsmoothed")
+    start_symbol = "<s>"
+    end_symbol = "</s>"
 
-#     with open(model_dir + "/raw_count.txt", "w") as f:
-#         f.writelines([str(vocab_size)])
+
+    for snt in training_sentences:
+        snt.insert(0, "<s>")
+        snt.insert(0, "<s>")
+        snt.insert(len(snt), "</s>")
+        for index in range(len(snt)):
+            vocab.add(snt[index])
+            context_size += 1
+            if index == 1:
+                bigram = snt[0] + " " + snt[1]
+            if index > 1:
+                bigram = snt[index - 1] + " " + snt[index]
+                trigram = snt[index - 2] + " " + snt[index - 1] + " " + snt[index]
+                if not trigram_dict.has_key(trigram):
+                    trigram_dict[trigram] = 1
+                else:
+                    trigram_dict[trigram] += 1
+
+                if not bigram_dict.has_key(bigram):
+                    bigram_dict[bigram] = 1
+                else:
+                    bigram_dict[bigram] += 1
+
+    # Check and deal with OOV Words
+    trigram_dict = check_oov(trigram_dict)
+    bigram_dict = check_oov(bigram_dict)
+
+    vocab_size = len(vocab)
+    print(vocab_size)
+    print(context_size)
+
+    # # For testing
+    # for w in trigram_dict:
+    #     print(w, trigram_dict[w])
+    for w in bigram_dict:
+        print(w, bigram_dict[w])
+    with open(model_dir + "/model_type.txt", "w") as f:
+        f.writelines([model_type])
+        f.writelines("\nunsmoothed")
+
+    with open(model_dir + "/vocab_size.txt", "w") as f:
+        f.writelines([str(vocab_size)])
+
+    with open(model_dir + "/ngram_counts.pkl", "wb") as f:
+        pickle.dump(trigram_dict, f)
+
+    with open(model_dir + "/context_size.txt", "w") as f:
+        f.writelines([str(context_size)])
 
 
 # elif model_type == "s3":

@@ -55,10 +55,15 @@ with open(model_dir + "/model_type.txt") as f:
 with open(model_dir + "/vocab_size.txt") as f:
     vocab_size = float(f.readline())
 
+
+
 if model_type == "1" or model_type == "3" or model_type == "s3":
     # Get the ngram counts
     with open(model_dir + "/ngram_counts.pkl", "rb") as f:
         unigram_dict = pickle.load(f)
+
+    with open(model_dir + "/context_size.txt") as f:
+        context_size = float(f.readline())
 
 
 
@@ -99,7 +104,7 @@ elif model_type == "1":
             if not unigram_dict.has_key(w):
                 w = "<unk>"
             #print(w)
-            prob = unigram_dict[w] / vocab_size
+            prob = unigram_dict[w] / context_size
             log_prob = math.log(prob)
             total_log_prob += log_prob
             num_tokens += 1
@@ -108,6 +113,19 @@ elif model_type == "1":
 
     with open(output_path, "w") as f:
         f.writelines(str(perplexity))
+
+elif model_type == "3":
+    # unsmoothed trigram
+    # P(w1w2..wk) = P(w3|w2w1)P(w4|w3w2)....P(wk|wk-1wk-2)
+    prob = 0.0
+    log_prob = 0.0
+    total_log_prob = 0.0
+    num_tokens = 0
+
+    for ws in testing_sentences:
+        for index in range(len(ws)):
+            
+
 
 
 else:

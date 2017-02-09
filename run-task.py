@@ -32,18 +32,19 @@ snts = [line.rstrip('\n').split(' ') for line in open(input_path)]
 #labels = ["wsj" for snt in snts]
 
 # Load wsj model
-with open(wsj_model_dir + "/vocab_size.txt") as f:
-    wsj_vocab_size = float(f.readline())
+with open(wsj_model_dir + "/context_size.txt") as f:
+    wsj_context_size = float(f.readline())
 
 with open(wsj_model_dir + "/ngram_counts.pkl", "rb") as f:
     wsj_dict = pickle.load(f)
 
+#if model_type == "1" or model_type == "3" or model_type == "s3":
 # Load sb model
 with open(sb_model_dir + "/ngram_counts.pkl", "rb") as f:
     sb_dict = pickle.load(f)
 
-with open(sb_model_dir + "/vocab_size.txt") as f:
-    sb_vocab_size = float(f.readline())
+with open(sb_model_dir + "/context_size.txt") as f:
+    sb_context_size = float(f.readline())
 
 labels = []
 
@@ -57,16 +58,16 @@ for snt in snts:
     for w in snt:
         # For wsj
         if not wsj_dict.has_key(w):
-            wsj_prob = wsj_dict["<unk>"] / wsj_vocab_size
+            wsj_prob = wsj_dict["<unk>"] / wsj_context_size
         else:
-            wsj_prob = wsj_dict[w] / wsj_vocab_size
+            wsj_prob = wsj_dict[w] / wsj_context_size
         wsj_log_prob = math.log(wsj_prob)
         wsj_total_log_prob += wsj_log_prob
         # For sb
         if not sb_dict.has_key(w):
-            sb_prob = sb_dict["<unk>"] / sb_vocab_size
+            sb_prob = sb_dict["<unk>"] / sb_context_size
         else:
-            sb_prob = sb_dict[w] / sb_vocab_size
+            sb_prob = sb_dict[w] / sb_context_size
         sb_log_prob = math.log(sb_prob)
         sb_total_log_prob += sb_log_prob
     wsj_result_prob = math.exp(wsj_total_log_prob)
