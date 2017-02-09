@@ -37,10 +37,15 @@ with open(model_dir + "/model_type.txt") as f:
 with open(model_dir + "/vocab_size.txt") as f:
     vocab_size = float(f.readline())
 
-if model_type == "1" or model_type == "3" or model_type == "s3":
+if model_type == "1":
     # Get the ngram counts
     with open(model_dir + "/ngram_counts.pkl", "rb") as f:
         dict = pickle.load(f)
+if model_type == "3":
+    with open(model_dir + "/trigram_counts.pkl", "rb") as f:
+        trigram_dict = pickle.load(f)
+    with open(model_dir + "/bigram_counts.pkl", "rb") as f:
+        bigram_dict = pickle.load(f)
 
 queried_ngrams = [tuple(line.rstrip('\n').split(' ')) for line in open(ngram_input_path)]
 
@@ -65,6 +70,25 @@ elif model_type == "1":
                 log_probs.append(math.log(dict[ngram[0]] / vocab_size))
         f.write("\n".join([str(x) for x in log_probs]))
 
+elif model_type == "3":
+    # unsmoothed trigram
+
+    log_probs = []
+    with open(log_prob_output_path, "w") as f:
+        for index, ngram in enumerate(queried_ngrams):
+            trigram = (" ".join(ngram))
+            bigram = ngram[0] + " " + ngram[1]
+            if not bigram_dict.has_key(bigram):
+                print(index, "no bigram")
+                log_probs.append("NaN")
+            elif not trigram_dict.has_key(trigram):
+                if bigram_dict.has_key(bigram):
+                    print(index, "no trigram")
+                    log_probs.append(math.log(trigram_dict["<unk>"] / bigram_dict[bigram]))
+            else:
+                print(index, "both exist")
+                log_probs.append(math.log(trigram_dict[trigram] / bigram_dict[bigram]))
+        f.write("\n".join([str(x) for x in log_probs]))
 
 else:
     print("Not implemented!! ")

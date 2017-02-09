@@ -124,9 +124,8 @@ elif model_type == "3":
     print("This is the unsmoothed trigram model")
     vocab = set()
     context_size = 0
-    trigram_dict = {}
+    trigram_dict = {}   # Include bigrams
     bigram_dict = {}
-
     start_symbol = "<s>"
     end_symbol = "</s>"
 
@@ -140,6 +139,10 @@ elif model_type == "3":
             context_size += 1
             if index == 1:
                 bigram = snt[0] + " " + snt[1]
+                if not bigram_dict.has_key(bigram):
+                    bigram_dict[bigram] = 1
+                else:
+                    bigram_dict[bigram] += 1
             if index > 1:
                 bigram = snt[index - 1] + " " + snt[index]
                 trigram = snt[index - 2] + " " + snt[index - 1] + " " + snt[index]
@@ -155,7 +158,7 @@ elif model_type == "3":
 
     # Check and deal with OOV Words
     trigram_dict = check_oov(trigram_dict)
-    bigram_dict = check_oov(bigram_dict)
+    bigram_dict = check_oov(bigram_dict)    # Do i do this for bigram as well????
 
     vocab_size = len(vocab)
     print(vocab_size)
@@ -166,6 +169,7 @@ elif model_type == "3":
     #     print(w, trigram_dict[w])
     for w in bigram_dict:
         print(w, bigram_dict[w])
+
     with open(model_dir + "/model_type.txt", "w") as f:
         f.writelines([model_type])
         f.writelines("\nunsmoothed")
@@ -173,8 +177,11 @@ elif model_type == "3":
     with open(model_dir + "/vocab_size.txt", "w") as f:
         f.writelines([str(vocab_size)])
 
-    with open(model_dir + "/ngram_counts.pkl", "wb") as f:
+    with open(model_dir + "/trigram_counts.pkl", "wb") as f:
         pickle.dump(trigram_dict, f)
+
+    with open(model_dir + "/bigram_counts.pkl", "wb") as f:
+        pickle.dump(bigram_dict, f)
 
     with open(model_dir + "/context_size.txt", "w") as f:
         f.writelines([str(context_size)])

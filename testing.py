@@ -1,19 +1,22 @@
-# start = "<s>"
-# end = "</s>"
-str = "aaa bbb ddd .\nccc ddd eee ."
-# print(str)
-# str = start + " " + start + " " + str + " " + end
-# print(str)
+b = [1, 2, 4, "NaN"]
+for i in b:
+	print(i)
+# # start = "<s>"
+# # end = "</s>"
+# str = "aaa bbb ddd .\nccc ddd eee ."
+# # print(str)
+# # str = start + " " + start + " " + str + " " + end
+# # print(str)
+# # print(len(str))
+# #
+# # training_sentences = [s.rstrip('\n').split(' ') for s in str]
+# #
+# # for snt in training_sentences:
+# # 	for w in snt:
+# # 		print(w)
 # print(len(str))
-#
-# training_sentences = [s.rstrip('\n').split(' ') for s in str]
-#
-# for snt in training_sentences:
-# 	for w in snt:
-# 		print(w)
-print(len(str))
-for index in range(1, len(str)):
-	print(index)
+# for index in range(1, len(str)):
+# 	print(index)
 
 # ############# enumerate
 # dict = {'a':1, 'b':2, 'c':3}

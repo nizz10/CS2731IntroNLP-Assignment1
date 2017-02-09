@@ -57,15 +57,23 @@ with open(model_dir + "/vocab_size.txt") as f:
 
 
 
-if model_type == "1" or model_type == "3" or model_type == "s3":
+if model_type == "1":
     # Get the ngram counts
-    with open(model_dir + "/ngram_counts.pkl", "rb") as f:
+    with open(model_dir + "/unigram_counts.pkl", "rb") as f:
         unigram_dict = pickle.load(f)
 
     with open(model_dir + "/context_size.txt") as f:
         context_size = float(f.readline())
 
+if model_type == "3":
+    with open(model_dir + "/trigram_counts.pkl", "rb") as f:
+        trigram_dict = pickle.load(f)
 
+    with open(model_dir + "/bigram_counts.pkl", "rb") as f:
+        bigram_dict = pickle.load(f)
+
+    with open(model_dir + "/context_size.txt") as f:
+        context_size = float(f.readline())
 
 
 if model_type == "dummy":
@@ -116,16 +124,42 @@ elif model_type == "1":
 
 elif model_type == "3":
     # unsmoothed trigram
-    # P(w1w2..wk) = P(w3|w2w1)P(w4|w3w2)....P(wk|wk-1wk-2)
     prob = 0.0
     log_prob = 0.0
     total_log_prob = 0.0
     num_tokens = 0
+    isNaN = False
 
     for ws in testing_sentences:
         for index in range(len(ws)):
-            
+            if index > 1:
+                bigram = ws[index - 2] + " " + ws[index - 1]
+                trigram = ws[index - 2] + " " + ws[index - 1] + " " + ws[index]
+                if not trigram_dict.has_key(trigram):
+                    trigram = "<unk>"
+                if not bigram_dict.has_key(bigram):
+                    isNaN = True
+                    break
+                prob = trigram_dict[trigram] / bigram_dict[bigram]
+                log_prob = math.log(prob)
+                total_log_prob += log_prob
+                num_tokens += 1
+        if isNaN:
+            break
+    if not isNaN:
+        h = -1.0 * total_log_prob / num_tokens
+        perplexity = math.exp(h)
+    else:
+        perplexity = "NaN"
+    with open(output_path, "w") as f:
+        f.writelines(str(perplexity))
 
+elif model_type == "s3":
+    # smoothed trigram_dict
+    prob = 0.0
+    log_prob = 0.0
+    total_log_prob = 0.0
+    num_tokens = 0
 
 
 else:
