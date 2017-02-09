@@ -41,7 +41,7 @@ if model_type == "1":
     # Get the ngram counts
     with open(model_dir + "/ngram_counts.pkl", "rb") as f:
         dict = pickle.load(f)
-if model_type == "3":
+if model_type == "3" or model_type == "3s":
     with open(model_dir + "/trigram_counts.pkl", "rb") as f:
         trigram_dict = pickle.load(f)
     with open(model_dir + "/bigram_counts.pkl", "rb") as f:
@@ -88,6 +88,22 @@ elif model_type == "3":
             else:
                 print(index, "both exist")
                 log_probs.append(math.log(trigram_dict[trigram] / bigram_dict[bigram]))
+        f.write("\n".join([str(x) for x in log_probs]))
+
+elif model_type == "3s":
+    # smoothed trigram
+
+    log_probs = []
+    with open(log_prob_output_path, "w") as f:
+        for index, ngram in enumerate(queried_ngrams):
+            trigram = (" ".join(ngram))
+            bigram = ngram[0] + " " + ngram[1]
+            if not trigram_dict.has_key(trigram):
+                trigram = "<unk>"
+            if not bigram_dict.has_key(bigram):
+                bigram = "<unk>"
+            log_probs.append(math.log((trigram_dict[trigram] + 1 / (bigram_dict[bigram] + vocab_size))))
+            print(math.log((trigram_dict[trigram] + 1 / (bigram_dict[bigram] + vocab_size))))
         f.write("\n".join([str(x) for x in log_probs]))
 
 else:

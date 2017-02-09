@@ -141,5 +141,49 @@ elif model_type == "3":
         else:
             labels.append("THIS IS A TIE")
 
+elif model_type == "3":
+    print("HERE")
+    for snt in snts:
+        wsj_prob = 0.0
+        wsj_log_probs = 0.0
+        wsj_total_log_prob = 0.0
+        sb_prob = 0.0
+        sb_log_probs = 0.0
+        sb_total_log_prob = 0.0
+        for index in range(len(snt)):
+            if index > 1:
+                bigram = snt[index - 2] + " " + snt[index - 1]
+                trigram = snt[index - 2] + " " + snt[index - 1] + " " + snt[index]
+                # For wsj
+                if not wsj_bigram_dict.has_key(bigram):
+                    bigram = "<unk>"
+                if not wsj_trigram_dict.has_key(trigram):
+                    trigram = "<unk>"
+
+                wsj_prob = (wsj_trigram_dict[trigram] + 1) / (wsj_bigram_dict[bigram] + vocab_size)
+
+                if not wsj_prob == 0:
+                    wsj_log_prob = math.log(wsj_prob)
+                    wsj_total_log_prob += wsj_log_prob
+                # For sb
+                if not sb_bigram_dict.has_key(bigram):
+                    bigram = "<unk>"
+                if not sb_trigram_dict.has_key(trigram):
+                    trigram = "<unk>"
+                sb_prob = (sb_trigram_dict[trigram] + 1) / (sb_bigram_dict[bigram] + vocab_size)
+                if not sb_prob == 0:
+                    sb_log_prob = math.log(sb_prob)
+                    sb_total_log_prob += sb_log_prob
+        wsj_result_prob = math.exp(wsj_total_log_prob)
+        sb_result_prob = math.exp(sb_total_log_prob)
+        print(wsj_result_prob)
+        print(sb_result_prob)
+
+        if wsj_result_prob < sb_result_prob:
+            labels.append("sb")
+        elif wsj_result_prob > sb_result_prob:
+            labels.append("wsj")
+        else:
+            labels.append("THIS IS A TIE")
 with open(output_path, "w") as f:
     f.writelines("\n".join(labels))

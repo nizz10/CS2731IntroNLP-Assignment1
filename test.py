@@ -65,7 +65,7 @@ if model_type == "1":
     with open(model_dir + "/context_size.txt") as f:
         context_size = float(f.readline())
 
-if model_type == "3":
+if model_type == "3" or model_type == "3s":
     with open(model_dir + "/trigram_counts.pkl", "rb") as f:
         trigram_dict = pickle.load(f)
 
@@ -154,12 +154,31 @@ elif model_type == "3":
     with open(output_path, "w") as f:
         f.writelines(str(perplexity))
 
-elif model_type == "s3":
+elif model_type == "3s":
     # smoothed trigram_dict
     prob = 0.0
     log_prob = 0.0
     total_log_prob = 0.0
     num_tokens = 0
+
+    for ws in testing_sentences:
+        for index in range(len(ws)):
+            if index > 1:
+                bigram = ws[index - 2] + " " + ws[index - 1]
+                trigram = ws[index - 2] + " " + ws[index - 1] + " " + ws[index]
+                if not trigram_dict.has_key(trigram):
+                    trigram = "<unk>"
+                if not bigram_dict.has_key(bigram):
+                    bigram = "<unk>"
+                prob = (trigram_dict[trigram] + 1) / (bigram_dict[bigram] + vocab_size)
+                log_prob = math.log(prob)
+                total_log_prob += log_prob
+                num_tokens += 1
+        h = -1.0 * total_log_prob / num_tokens
+        perplexity = math.exp(h)
+
+    with open(output_path, "w") as f:
+        f.writelines(str(perplexity))
 
 
 else:
