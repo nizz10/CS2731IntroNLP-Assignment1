@@ -34,18 +34,13 @@ with open(model_dir + "/model_type.txt") as f:
     model_type = f.readline().rstrip("\n")
     smooth_or_not = f.readline()
 
-with open(model_dir + "/vocab_size.txt") as f:
-    vocab_size = float(f.readline())
+with open(model_dir + "/vocabulary.pkl", "rb") as f:
+    vocab_dict = pickle.load(f)
 
-if model_type == "1":
-    # Get the ngram counts
-    with open(model_dir + "/ngram_counts.pkl", "rb") as f:
-        dict = pickle.load(f)
 if model_type == "3" or model_type == "3s":
     with open(model_dir + "/trigram_counts.pkl", "rb") as f:
         trigram_dict = pickle.load(f)
-    with open(model_dir + "/bigram_counts.pkl", "rb") as f:
-        bigram_dict = pickle.load(f)
+
 
 queried_ngrams = [tuple(line.rstrip('\n').split(' ')) for line in open(ngram_input_path)]
 
@@ -60,14 +55,15 @@ elif model_type == "1":
     # unsmoothed unigram
     # P(w1w1...wk) = P(w1)P(w2)...P(wk)
 
+    context_size = float(sum(vocab_dict.values()))
     log_probs = []
     with open(log_prob_output_path, "w") as f:
         for index, ngram in enumerate(queried_ngrams):
             print(ngram[0])
-            if not dict.has_key(ngram[0]):
-                log_probs.append(math.log(dict["<unk>"] / vocab_size))
+            if not vocab_dict.has_key(ngram[0]):
+                log_probs.append(math.log(vocab_dict["<unk>"] / context_size))
             else:
-                log_probs.append(math.log(dict[ngram[0]] / vocab_size))
+                log_probs.append(math.log(vocab_dict[ngram[0]] / context_size))
         f.write("\n".join([str(x) for x in log_probs]))
 
 elif model_type == "3":
@@ -76,34 +72,61 @@ elif model_type == "3":
     log_probs = []
     with open(log_prob_output_path, "w") as f:
         for index, ngram in enumerate(queried_ngrams):
-            trigram = (" ".join(ngram))
-            bigram = ngram[0] + " " + ngram[1]
-            if not bigram_dict.has_key(bigram):
-                print(index, "no bigram")
-                log_probs.append("NaN")
-            elif not trigram_dict.has_key(trigram):
-                if bigram_dict.has_key(bigram):
-                    print(index, "no trigram")
-                    log_probs.append(math.log(trigram_dict["<unk>"] / bigram_dict[bigram]))
+            # Replace all the unseen word in the testing ngram with <unk> for later use
+            if not vocab_dict.has_key(ngram[0]):
+                trigram = "<unk>"
+                bigram = "<unk>"
             else:
-                print(index, "both exist")
-                log_probs.append(math.log(trigram_dict[trigram] / bigram_dict[bigram]))
+                trigram = ngram[0]
+                bigram = ngram[0]
+            if not vocab_dict.has_key(ngram[1]):
+                trigram = trigram + " " + "<unk>"
+                bigram = bigram + " " + "<unk>"
+            else:
+                trigram = trigram + " " + ngram[1]
+                bigram = bigram + " " + ngram[1]
+            if not vocab_dict.has_key(ngram[2]):
+                trigram = trigram + " " + "<unk>"
+            else:
+                trigram = trigram + " " + ngram[2]
+
+            # Output "NaN" if either the bigram or trigram is unseen
+            if not trigram_dict.has_key(bigram) or not trigram_dict.has_key(trigram):
+                log_probs.append("NaN")
+            else:
+                log_probs.append(math.log(trigram_dict[trigram] / float(trigram_dict[bigram])))
         f.write("\n".join([str(x) for x in log_probs]))
 
 elif model_type == "3s":
     # smoothed trigram
-
+    vocab_size = float(len(vocab_dict.keys()))
     log_probs = []
     with open(log_prob_output_path, "w") as f:
         for index, ngram in enumerate(queried_ngrams):
-            trigram = (" ".join(ngram))
-            bigram = ngram[0] + " " + ngram[1]
-            if not trigram_dict.has_key(trigram):
+            if not vocab_dict.has_key(ngram[0]):
                 trigram = "<unk>"
-            if not bigram_dict.has_key(bigram):
                 bigram = "<unk>"
-            log_probs.append(math.log((trigram_dict[trigram] + 1 / (bigram_dict[bigram] + vocab_size))))
-            print(math.log((trigram_dict[trigram] + 1 / (bigram_dict[bigram] + vocab_size))))
+            else:
+                trigram = ngram[0]
+                bigram = ngram[0]
+            if not vocab_dict.has_key(ngram[1]):
+                trigram = trigram + " " + "<unk>"
+                bigram = bigram + " " + "<unk>"
+            else:
+                trigram = trigram + " " + ngram[1]
+                bigram = bigram + " " + ngram[1]
+            if not vocab_dict.has_key(ngram[2]):
+                trigram = trigram + " " + "<unk>"
+            else:
+                trigram = trigram + " " + ngram[2]
+
+            if not trigram_dict.has_key(bigram):
+                log_probs.append(math.log((1 / vocab_size)))
+            elif not trigram_dict.has_key(trigram):
+                log_probs.append(math.log((1 / (trigram_dict[bigram] + vocab_size))))
+            else:
+                log_probs.append(math.log((trigram_dict[trigram] + 1 / (trigram_dict[bigram] + vocab_size))))
+
         f.write("\n".join([str(x) for x in log_probs]))
 
 else:

@@ -29,161 +29,156 @@ print("")
 # START OF YOUR IMPLEMENTATION
 
 snts = [line.rstrip('\n').split(' ') for line in open(input_path)]
-#labels = ["wsj" for snt in snts]
+
 with open(wsj_model_dir + "/model_type.txt") as f:
     model_type = f.readline().strip("\n")
 
-print(model_type)
-
 # Load wsj model
-with open(wsj_model_dir + "/context_size.txt") as f:
-    wsj_context_size = float(f.readline())
-if model_type == "1":
-    with open(wsj_model_dir + "/ngram_counts.pkl", "rb") as f:
-        wsj_dict = pickle.load(f)
-if model_type == "3":
+
+with open(wsj_model_dir + "/vocabulary.pkl", "rb") as f:
+    wsj_dict = pickle.load(f)
+if model_type == "3" or model_type == "3s":
     with open(wsj_model_dir + "/trigram_counts.pkl", "rb") as f:
         wsj_trigram_dict = pickle.load(f)
-    with open(wsj_model_dir + "/bigram_counts.pkl", "rb") as f:
-        wsj_bigram_dict = pickle.load(f)
-#if model_type == "1" or model_type == "3" or model_type == "s3":
+
 # Load sb model
 
-if model_type == "1":
-    with open(sb_model_dir + "/ngram_counts.pkl", "rb") as f:
-        sb_dict = pickle.load(f)
+with open(sb_model_dir + "/vocabulary.pkl", "rb") as f:
+    sb_dict = pickle.load(f)
 
-if model_type == "3":
+if model_type == "3" or model_type == "3s":
     with open(sb_model_dir + "/trigram_counts.pkl", "rb") as f:
         sb_trigram_dict = pickle.load(f)
-    with open(sb_model_dir + "/bigram_counts.pkl", "rb") as f:
-        sb_bigram_dict = pickle.load(f)
-with open(sb_model_dir + "/context_size.txt") as f:
-    sb_context_size = float(f.readline())
+
 
 labels = []
+
 if model_type == "1":
+
     for snt in snts:
-        wsj_prob = 0.0
-        wsj_log_probs = 0.0
-        wsj_total_log_prob = 0.0
-        sb_prob = 0.0
-        sb_log_probs = 0.0
-        sb_total_log_prob = 0.0
+
+        wsj_context_size = float(sum(wsj_dict.values()))
+        sb_context_size = float(sum(sb_dict.values()))
+
+        wsj_total_prob = 0.0
+
+        sb_total_prob = 0.0
+
         for w in snt:
             # For wsj
             if not wsj_dict.has_key(w):
                 wsj_prob = wsj_dict["<unk>"] / wsj_context_size
             else:
                 wsj_prob = wsj_dict[w] / wsj_context_size
-            wsj_log_prob = math.log(wsj_prob)
-            wsj_total_log_prob += wsj_log_prob
+
+            wsj_total_prob += wsj_prob
+
             # For sb
             if not sb_dict.has_key(w):
                 sb_prob = sb_dict["<unk>"] / sb_context_size
             else:
                 sb_prob = sb_dict[w] / sb_context_size
-            sb_log_prob = math.log(sb_prob)
-            sb_total_log_prob += sb_log_prob
-        wsj_result_prob = math.exp(wsj_total_log_prob)
-        sb_result_prob = math.exp(sb_total_log_prob)
 
-        if wsj_result_prob < sb_result_prob:
+            sb_total_prob += sb_prob
+
+
+        if wsj_total_prob < sb_total_prob:
             labels.append("sb")
-        elif wsj_result_prob > sb_result_prob:
+        elif wsj_total_prob > sb_total_prob:
             labels.append("wsj")
-        else:
-            labels.append("THIS IS A TIE")
 
 elif model_type == "3":
-    print("HERE")
     for snt in snts:
-        wsj_prob = 0.0
-        wsj_log_probs = 0.0
-        wsj_total_log_prob = 0.0
-        sb_prob = 0.0
-        sb_log_probs = 0.0
-        sb_total_log_prob = 0.0
+
+        wsj_total_prob = 0.0
+        sb_total_prob = 0.0
+
         for index in range(len(snt)):
             if index > 1:
+
+                rep_snt = snt
+
+                if not wsj_dict.has_key(snt[index]):
+                    snt[index] = "<unk>"
                 bigram = snt[index - 2] + " " + snt[index - 1]
                 trigram = snt[index - 2] + " " + snt[index - 1] + " " + snt[index]
+
                 # For wsj
-                if not wsj_bigram_dict.has_key(bigram):
-                    wsj_prob = wsj_trigram_dict["<unk>"] / wsj_bigram_dict["<unk>"]
+                if not wsj_trigram_dict.has_key(bigram) or not wsj_trigram_dict.has_key(trigram):
+                    wsj_prob = 0.0
+                else:
+                    wsj_prob = wsj_trigram_dict[trigram] / wsj_trigram_dict[bigram]
+
+                wsj_total_prob += wsj_prob
+
+                # For sb
+                if not sb_dict.has_key(rep_snt[index]):
+                    rep_snt[index] = "<unk>"
+                bigram = rep_snt[index - 2] + " " + rep_snt[index - 1]
+                trigram = rep_snt[index - 2] + " " + rep_snt[index - 1] + " " + rep_snt[index]
+                if not sb_trigram_dict.has_key(bigram) or not sb_trigram_dict.has_key(trigram):
+                    sb_prob = 0.0
+                else:
+                    sb_prob = sb_trigram_dict[trigram] / sb_trigram_dict[bigram]
+
+                sb_total_prob += sb_prob
+
+        # Skip if both probabilities equal to each other (when both are zeros)
+        if wsj_total_prob < sb_total_prob:
+            labels.append("sb")
+        elif wsj_total_prob > sb_total_prob:
+            labels.append("wsj")
+
+
+elif model_type == "3s":
+    for snt in snts:
+
+        wsj_vocab_size = float(len(wsj_dict.keys()) - 1)    # minus one <s>
+        sb_vocab_size = float(len(sb_dict.keys()) - 1)      # minus one <s>
+
+        wsj_total_prob = 0.0
+        sb_total_prob = 0.0
+
+        for index in range(len(snt)):
+            if index > 1:
+
+                rep_snt = snt
+
+                # For wsj
+                if not wsj_dict.has_key(snt[index]):
+                    snt[index] = "<unk>"
+                bigram = snt[index - 2] + " " + snt[index - 1]
+                trigram = snt[index - 2] + " " + snt[index - 1] + " " + snt[index]
+
+                if not wsj_trigram_dict.has_key(bigram):
+                    wsj_prob = 1 / wsj_vocab_size
                 elif not wsj_trigram_dict.has_key(trigram):
-                    wsj_prob = wsj_trigram_dict["<unk>"] / wsj_bigram_dict[bigram]
+                    wsj_prob = 1 / (wsj_trigram_dict[bigram] + wsj_vocab_size)
                 else:
-                    wsj_prob = wsj_trigram_dict[trigram] / wsj_bigram_dict[bigram]
+                    wsj_prob = (1 + wsj_trigram_dict[trigram]) / (wsj_trigram_dict[bigram] + wsj_vocab_size)
 
-                if not wsj_prob == 0:
-                    wsj_log_prob = math.log(wsj_prob)
-                    wsj_total_log_prob += wsj_log_prob
+                wsj_total_prob += wsj_prob
+
                 # For sb
-                if not sb_bigram_dict.has_key(bigram):
-                    sb_prob = sb_trigram_dict["<unk>"] / sb_bigram_dict["<unk>"]
+                if not sb_dict.has_key(rep_snt[index]):
+                    rep_snt[index] = "<unk>"
+                bigram = rep_snt[index - 2] + " " + rep_snt[index - 1]
+                trigram = rep_snt[index - 2] + " " + rep_snt[index - 1] + " " + rep_snt[index]
+
+                if not sb_trigram_dict.has_key(bigram):
+                    sb_prob = 1 / sb_vocab_size
                 elif not sb_trigram_dict.has_key(trigram):
-                    sb_prob = sb_trigram_dict["<unk>"] / sb_bigram_dict[bigram]
+                    sb_prob = 1 / (sb_trigram_dict[bigram] + sb_vocab_size)
                 else:
-                    sb_prob = sb_trigram_dict[trigram] / sb_bigram_dict[bigram]
-                if not sb_prob == 0:
-                    sb_log_prob = math.log(sb_prob)
-                    sb_total_log_prob += sb_log_prob
-        wsj_result_prob = math.exp(wsj_total_log_prob)
-        sb_result_prob = math.exp(sb_total_log_prob)
-        print(wsj_result_prob)
-        print(sb_result_prob)
+                    sb_prob = (1 + sb_trigram_dict[trigram]) / (sb_trigram_dict[bigram] + sb_vocab_size)
 
-        if wsj_result_prob < sb_result_prob:
+                sb_total_prob += sb_prob
+
+
+        if wsj_total_prob < sb_total_prob:
             labels.append("sb")
-        elif wsj_result_prob > sb_result_prob:
+        elif wsj_total_prob > sb_total_prob:
             labels.append("wsj")
-        else:
-            labels.append("THIS IS A TIE")
 
-elif model_type == "3":
-    print("HERE")
-    for snt in snts:
-        wsj_prob = 0.0
-        wsj_log_probs = 0.0
-        wsj_total_log_prob = 0.0
-        sb_prob = 0.0
-        sb_log_probs = 0.0
-        sb_total_log_prob = 0.0
-        for index in range(len(snt)):
-            if index > 1:
-                bigram = snt[index - 2] + " " + snt[index - 1]
-                trigram = snt[index - 2] + " " + snt[index - 1] + " " + snt[index]
-                # For wsj
-                if not wsj_bigram_dict.has_key(bigram):
-                    bigram = "<unk>"
-                if not wsj_trigram_dict.has_key(trigram):
-                    trigram = "<unk>"
-
-                wsj_prob = (wsj_trigram_dict[trigram] + 1) / (wsj_bigram_dict[bigram] + vocab_size)
-
-                if not wsj_prob == 0:
-                    wsj_log_prob = math.log(wsj_prob)
-                    wsj_total_log_prob += wsj_log_prob
-                # For sb
-                if not sb_bigram_dict.has_key(bigram):
-                    bigram = "<unk>"
-                if not sb_trigram_dict.has_key(trigram):
-                    trigram = "<unk>"
-                sb_prob = (sb_trigram_dict[trigram] + 1) / (sb_bigram_dict[bigram] + vocab_size)
-                if not sb_prob == 0:
-                    sb_log_prob = math.log(sb_prob)
-                    sb_total_log_prob += sb_log_prob
-        wsj_result_prob = math.exp(wsj_total_log_prob)
-        sb_result_prob = math.exp(sb_total_log_prob)
-        print(wsj_result_prob)
-        print(sb_result_prob)
-
-        if wsj_result_prob < sb_result_prob:
-            labels.append("sb")
-        elif wsj_result_prob > sb_result_prob:
-            labels.append("wsj")
-        else:
-            labels.append("THIS IS A TIE")
 with open(output_path, "w") as f:
     f.writelines("\n".join(labels))
