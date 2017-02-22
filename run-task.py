@@ -1,5 +1,5 @@
-# Author: Yuhuan Jiang
-# Version: 1.0
+# Author: Ningqian Zhang    
+# Version: 2.0
 # Language: Python 2
 
 import argparse
