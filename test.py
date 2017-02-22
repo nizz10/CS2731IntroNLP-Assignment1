@@ -52,13 +52,15 @@ with open(model_dir + "/model_type.txt") as f:
     model_type = f.readline().rstrip("\n")
     smooth_or_not = f.readline()
 
-with open(model_dir + "/vocab_size.txt") as f:
-    vocab_size = float(f.readline())
 
-if model_type == "1" or model_type == "3" or model_type == "s3":
-    # Get the ngram counts
-    with open(model_dir + "/ngram_counts.pkl", "rb") as f:
-        unigram_dict = pickle.load(f)
+with open(model_dir + "/vocabulary.pkl", "rb") as f:
+    vocab_dict = pickle.load(f)
+
+
+
+if model_type == "3" or model_type == "3s":
+    with open(model_dir + "/trigram_counts.pkl", "rb") as f:
+        trigram_dict = pickle.load(f)
 
 
 
@@ -89,21 +91,91 @@ if model_type == "dummy":
 elif model_type == "1":
     # unsmoothed unigram
     # P(w1w1...wk) = P(w1)P(w2)...P(wk)
+    total_log_prob = 0.0
+    num_tokens = 0      # number of tokens in testing sentences
+
+    context_size = float(sum(vocab_dict.values()))
+
+    for ws in testing_sentences:    # For every sentences in testing document:
+        for w in ws:       # For every work token in every sentence:
+            if not vocab_dict.has_key(w):
+                w = "<unk>"
+            prob = vocab_dict[w] / context_size
+            log_prob = math.log(prob)
+            total_log_prob += log_prob
+            num_tokens += 1
+
+    h = -1.0 * total_log_prob / num_tokens
+    perplexity = math.exp(h)
+
+    with open(output_path, "w") as f:
+        f.writelines(str(perplexity))
+
+elif model_type == "3":
+    # unsmoothed trigram
+    context_size = float(sum(vocab_dict.values()) - 1) # minus one <s>
+
+    prob = 0.0
+    log_prob = 0.0
+    total_log_prob = 0.0
+    num_tokens = 0
+    isNaN = False
+
+    for ws in testing_sentences:
+        for index in range(len(ws)):
+            if index > 1:   # Skipped the first two <s>s
+                # Replace the words not present in the vocab_dict with <unk>s first
+                if not vocab_dict.has_key(ws[index]):
+                    ws[index] = "<unk>"
+                bigram = ws[index - 2] + " " + ws[index - 1]
+                trigram = ws[index - 2] + " " + ws[index - 1] + " " + ws[index]
+
+                # Compare with the trigram_dict generated according to training sentences
+                if not trigram_dict.has_key(bigram) or not trigram_dict.has_key(trigram):
+                    isNaN = True
+                    break
+                else:
+                    prob = trigram_dict[trigram] / float(trigram_dict[bigram])
+                log_prob = math.log(prob)
+                total_log_prob += log_prob
+                num_tokens += 1
+        if isNaN:
+            break
+    if not isNaN:
+        h = -1.0 * total_log_prob / num_tokens
+        perplexity = math.exp(h)
+    else:   # Output "NaN" in perplexity file if trigram or bigram has count 0
+        perplexity = "NaN"
+    with open(output_path, "w") as f:
+        f.writelines(str(perplexity))
+
+elif model_type == "3s":
+    # smoothed trigram_dict
     prob = 0.0
     log_prob = 0.0
     total_log_prob = 0.0
     num_tokens = 0
 
-    for ws in testing_sentences:    # For every sentences in testing document:
-        for w in ws:       # For every work token in every sentence:
-            if not unigram_dict.has_key(w):
-                w = "<unk>"
-            prob = unigram_dict[w] / vocab_size
-            log_prob = math.log(prob)
-            total_log_prob += log_prob
-            num_tokens += 1
-    h = -1.0 * total_log_prob / num_tokens
-    perplexity = math.exp(h)
+    vocab_size = float(len(vocab_dict.keys())-1)    # minus one <s>
+
+    for ws in testing_sentences:
+        for index in range(len(ws)):
+            if index > 1:
+                if not vocab_dict.has_key(ws[index]):
+                    ws[index] = "<unk>"
+                bigram = ws[index - 2] + " " + ws[index - 1]
+                trigram = ws[index - 2] + " " + ws[index - 1] + " " + ws[index]
+                if not trigram_dict.has_key(bigram):
+                    prob = 1 / vocab_size
+                elif not trigram_dict.has_key(trigram):
+                    prob = 1 / (trigram_dict[bigram] + vocab_size)
+                else:
+                    prob = (trigram_dict[trigram] + 1) / (trigram_dict[bigram] + vocab_size)
+                log_prob = math.log(prob)
+                total_log_prob += log_prob
+                num_tokens += 1
+        h = -1.0 * total_log_prob / num_tokens
+        perplexity = math.exp(h)
 
     with open(output_path, "w") as f:
         f.writelines(str(perplexity))
